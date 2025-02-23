@@ -36,13 +36,18 @@ public class ContactsHashOpen implements IContactDB {
         }
         numEntries = 0;
     }
+        // MODIFIED HASH FUNCTION 1st WORKING DRAFT
 
     private int hash(String s) {
         assert  s != null && !s.trim().equals(""); 
+        final int PRIME = 31;
+        int hash = s.length() * s.charAt(0);//combine the length with the first character
         
-        // VERY BAD HASH FUNCTION -- you must improve on this
+        for (int i = 1; i < s.length(); i++){ //loop through from 2nd character 
+            hash = (hash*PRIME + s.charAt(i))%table.length;
+        }
         
-        return Math.abs((s.charAt(0)) % table.length);   
+        return Math.abs(hash);   
         
     }
 
