@@ -5,14 +5,17 @@ package cw1a;
  * @author DL 2025-01
  */
 public class ContactsHashOpen implements IContactDB {  
-    private final int initialTableCapacity = 1000;
+    private static final int[] PRIME_SIZES = {
+        1009, 2003, 4001, 8009, 16001, 32003, 64007, 128021
+    };
+    private int primeIndex = 0;
     private Contact[] table;
     private int tableCapacity;
     private int numEntries;
     private int totalVisited = 0;
     
 
-    private static final double maxLoadFactor = 70.0;
+    private static final double maxLoadFactor = 50.0;
             
     public int getNumEntries(){return numEntries;}
     public void resetTotalVisited() {totalVisited = 0;}
@@ -20,7 +23,7 @@ public class ContactsHashOpen implements IContactDB {
 
     public ContactsHashOpen() {
         System.out.println("Hash Table with open addressing");
-        this.tableCapacity = initialTableCapacity;
+        this.tableCapacity = PRIME_SIZES[primeIndex];
         table = new Contact[tableCapacity];
         clearDB();
     }
@@ -40,6 +43,7 @@ public class ContactsHashOpen implements IContactDB {
 
     private int hash(String s) {
         assert  s != null && !s.trim().equals(""); 
+        System.out.println("Hashing string: '" + s + "'");
         final int PRIME = 31;
         int hash = s.length() * s.charAt(0);//combine the length with the first character
         
@@ -52,20 +56,54 @@ public class ContactsHashOpen implements IContactDB {
     }
 
     private double loadFactor() {
-        return (double) numEntries / (double) table.length * 100.0; 
-        // note need for cast to double
-    }
+        return (double) numEntries / (double) table.length * 100.0;
+    } 
+       
 
     private int findPos(String name) {
-        assert name != null && !name.trim().equals("");
-        int pos = hash(name);
-        int numVisited = 1;  
-        System.out.println("finding " + pos + ": " + name );
-        while (table[pos] != null && !name.equals(table[pos].getName())) {
+        assert name != null && !name.trim().equals(""); //trim whitespace and verify name is not null or an empty string
+        int startPos = hash(name); //Calculate initial hash position 
+        int pos = startPos; //init the position being examined to the initial hash position
+        int numVisited = 1; //init counter for num positions checked
+        //Debugger print statements
+        System.out.println("\nStarting search for: " + name);
+        System.out.println("Initial hash position: " + startPos);
+        //check whether the initial position is either empy (null - maybe change later...), or contains target
+        //If so for either, no probing needed so can skip to return
+        if (table[pos] == null || name.equals(table[pos].getName())) {
+            System.out.println("Search ended at position " + pos);
+            if (table[pos]!= null){
+                System.out.println("Found: " + table[pos].getName());
+            } else {
+                System.out.println("Position is empty");
+            }
+            totalVisited+=numVisited; //update count prior to returning
+            return pos;
+        }
+        //If initial position was not empty or target, commence quad probing
+        for (int i=1; numVisited < table.length; i++){
+            //keep track of bucket trail for analysis
            System.out.println("Visiting bucket " + pos + ": " + table[pos] );
-           numVisited++;
-           pos = (pos + 1) % table.length; // linear probing
-        }  
+           
+           int step = i * i;//the "i^2" step of the formula
+           //Calculate the new position using quad formula
+           //Double up the mod to ensure positive result even if overflow leads the first statement to yield a negative
+           pos = ((startPos + step) % table.length + table.length) % table.length;
+           numVisited++;//inc counter 
+           //Debugger print stmnt
+           System.out.println("Next step size: " + step + ",moving to position: " + pos);
+           //break out of probing loop if null or target found (look at revising without the dreaded 'break')
+           if (table[pos] == null || name.equals(table[pos].getName())){
+               break;
+            }
+        }
+        //output trail and result for analysis  
+        System.out.print("Search ended at position " +pos);
+        if (table[pos] != null){
+            System.out.println("Found " + table[pos].getName());
+        } else {
+            System.out.println("Position is empty");
+        }
         System.out.println("number of  buckets visited = " + numVisited);
         totalVisited += numVisited;
       
@@ -234,7 +272,9 @@ public class ContactsHashOpen implements IContactDB {
         System.out.println("RESIZING");
         Contact[] oldTable = table; // copy the reference
         int oldTableCapacity = tableCapacity;
-        tableCapacity = oldTableCapacity * 2;
+        primeIndex++;
+        
+        tableCapacity = PRIME_SIZES[primeIndex];
         System.out.println("resizing to " + tableCapacity);
         table = new Contact[tableCapacity]; // make a new tyable
         
