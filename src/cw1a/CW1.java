@@ -16,7 +16,7 @@ public class CW1 {
     private static Scanner keyboard;
     private static String fileName = "no file choaen";
     
-    private static IContactDB db = new ContactsHashOpen(); 
+    private static IContactDB db = new ContactsHashChained(); 
     // change to ContactsHashChained for later part of Coursework 1
     // change to ContactsBST for Coursework 2
 
